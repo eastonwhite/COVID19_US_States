@@ -1,0 +1,378 @@
+---
+bibliography: Whitebib.bib
+csl: ecology-letters.csl
+editor_options:
+  chunk_output_type: console
+fontsize: 12pt
+geometry: margin=1in
+header-includes: \usepackage{float} \usepackage{lineno} \usepackage{setspace}\doublespacing
+  \usepackage[round]{natbib} \bibpunct[; ]{(}{)}{,}{a}{}{,} \usepackage{color} \usepackage{totcount}
+  \newtotcounter{citenum} \def\oldcite{} \let\oldcite=\bibcite \def\bibcite{\stepcounter{citenum}\oldcite}
+  \usepackage{fancyhdr} \pagestyle{fancy} \fancyhf{} \fancyfoot[LE,LO]{\textcolor{red}{Preprint
+  - This work has not yet been peer-reviewed}} \fancyfoot[RE,RO]{\thepage} \renewcommand{\headrulewidth}{0pt}
+output:
+  pdf_document:
+    fig_caption: yes
+    keep_tex: yes
+    number_sections: no
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_knit$set(root.dir = dirname(getwd()))
+```
+
+
+\begin{center}
+\textbf{\Large State-level variation for initial COVID-19 dynamics in the United States}
+\vspace{7 mm}
+	
+\textsc{Easton R. White\footnote{Easton.White@uvm.edu}$^{,2}$}
+\vspace{5 mm}
+
+\normalsize{\indent $^2$Department of Biology, University of Vermont, VT 05405, USA}
+\end{center}
+
+\vspace{5 mm}
+
+\textbf{Abstract}
+
+In the development of an epidemic, metrics such as $R_0$, doubling time, and case fatality rates are important in understanding and predicting the course of an epidemic. However, if collected over country or regional scales, these metrics hide important smaller-scale, local dynamics. We examine how commonly used epidemiological metrics differ for each individual state within the United States during the initial COVID-19 outbreak. We found that the case number, and trajectory of cases, differs considerably between states. Although individual states are clearly not independent, they can serve as mini, natural experiments in how different demographic patterns and government responses can impact the course of an epidemic. Thus, these results should be used to better understand, in near real-time, what actions are working most effectively. 
+
+
+\vspace{3 mm}
+
+Keywords: SARS-CoV-2, COVID-19, spatial heterogeneity, doubling time
+
+\vspace{3 mm}
+
+Daily updates to figures in this manuscript are available at: https://github.com/eastonwhite/COVID19_US_States
+
+
+```{r load_packages,echo=F,warning=F,message=F}
+if (!require("pacman",character.only = TRUE))
+  {
+    install.packages("pacman",dep=TRUE)
+    if(!require("pacman",character.only = TRUE)) stop("Package not found")
+  }
+
+# Keeping below source for github package. Ask Easton whether pacman works for github packages or not.
+#devtools::install_github("rensa/stickylabeller")
+pacman::p_load(patchwork, dplyr,tidyr,ggplot2,ggrepel,viridis,usmap)
+```
+
+
+```{r, echo=F,message=F,warning=F}
+# Load data for numbers in introduction
+covid <- read.csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Confirmed.csv',header=T)
+require(scales)
+#sum(covid[,ncol(covid)])
+#length(table(covid$Country.Region))
+#format(as.Date(substr(names(covid)[ncol(covid)],2,8),format = '%m.%d.%y'),'%B %d')
+```
+
+\clearpage
+
+# Introduction
+
+The global SARS-CoV-2 (COVID-19) pandemic began in Wuhan, China in late 2019 [@WHO2020]. As of `r paste(format(as.Date(substr(names(covid)[ncol(covid)],2,8),format = '%m.%d.%y'),'%B %d'),'th',sep='')`, `r comma(sum(covid[,ncol(covid)]))` cases have been reported across `r length(table(covid$Country.Region))` countries and regions. There has been several sets of efforts to track the progression of the outbreak across the world and within countries. For example, John Hopkins University Center for Systems Science and Engineering (CSSE) has compiled data from various sources, including the US Center for Disease Control and the World Health Organization, to present a global picture of COVID-19 cases and deaths [@Dong2020]. These efforts have allowed for international scientific research and political decision-making. Although data are collected at local scales (e.g. within hospitals), in an emerging pandemic data is typically reported at the country level. This allows for interesting comparisons between countries [@Anderson2020,@Jombart2020] and for information from an earlier affected country to be used to slow the outbreak in other places. For instance, South Korea was able to flatten their outbreak curve through early and widespread testing as well as strict quarantine policies (citation). However, country-level analyses still hide more local dynamics that are important to the overall epidemic progression.
+
+Spatial heterogeneity is important for population dynamics generally [@Levin1992,@Hanksi2001,@Schreiber2010] and in particular for understanding the progression of infectious disease dynamics [@Grenfell1995,@Park2012]. Spatial heterogeneity can include differences in local population density, movement patterns, suitability of environmental conditions for transmission, among other factors. For instance, @Keeling2001 showed how spatial distribution and size of farms affected the 2001 UK Foot and Mouth Epidemic.
+
+<!--
+For the current COVID-19 outbreak, researchers have noted the different trajectories even within countries. For example, in China... (citations). MORE TEXT HERE.
+-->
+
+Here we examine the progression of COVID-19 for state-level differences within the United States. We examine how commonly-used metrics, including doubling time, can vary state to state and compared to the US as a whole. Although not independent units, we can use state-level data to understand the progression of the outbreak across different replicates within a country. Our results can be used to infer what actions by which states are currently most effective in managing the outbreak. We also provide a link to daily updates of our findings as the exact quantitative results are likely to change over the course of the epidemic. 
+
+# Results and Discussion
+
+
+
+<!--Load data and start analyses-->
+
+```{r load_data,echo=F,warning=F,message=F}
+# Load data here automatically
+require(dplyr)
+require(tidyr)
+
+#covid <- read.csv('time_series_19-covid-Confirmed.csv',header=T)
+# Use latest data from https://github.com/CSSEGISandData/COVID-19
+covid <- read.csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Confirmed.csv',header=T)
+
+#write.csv(x = covid,file = 'RawData_COVID19_all_countries.csv',quote = F)
+
+`%notin%` <- Negate(`%in%`)
+# Subset data just for the USA
+covid <- covid %>%
+  filter(Country.Region == 'US') %>%
+  #filter(!grepl(',', Province.State)) %>% 
+  filter(Province.State %notin% c('Diamond Princess','Grand Princess'))
+
+# Change data to long format and adjust date variable
+covid <- covid %>%
+  gather('Date','Cases',-Province.State,-Country.Region,-Lat,-Long) %>%
+  mutate(Date = sub('.',replacement = '',Date)) %>%
+  mutate(Date = as.Date(Date,format='%m.%d.%y')) %>%
+  mutate(DayOfYear = strftime(Date, format = "%j"))
+
+
+```
+
+
+```{r cases_vs_time,echo=F,warning=F,message=F, fig.height=4,eval=T,fig.cap='(Left panel) Cases versus time for the whole United States. (Right panel) Log number of cases versus time for the whole United States. The red, dashed line is the line of best fit for all the data and the blue, solid line is the line of best fit since Feburary 29th. \\label{fig:cases_vs_time}'}
+# Basic plots of cases over time and broken up by state (this might be in the methods section)
+
+US_cases_by_day <- covid %>%
+  group_by(Date) %>%
+  summarize(total_cases = sum(Cases)) %>%
+  mutate(DayOfYear=as.numeric(strftime(Date, format = "%j"))-min(as.numeric(strftime(Date, format = "%j"))))
+
+#jpeg('cases_vs_time-1.jpeg',width = 7, height = 5, units='in',res=500)
+par(mfrow=c(1,2),oma=c(1,0.5,0.5,0.5),mar=c(4,4,0.5,0.5))
+plot(US_cases_by_day$Date,US_cases_by_day$total_cases,las=1,type='o',pch=16, ylab = 'Total number of US cases',xlab='')
+#points(US_cases_by_day$Date,0.1875+0.11667*US_cases_by_day$Date)
+#US_cases_by_day = US_cases_by_day[US_cases_by_day$total_cases>0,]
+#dude=summary(lm(log(US_cases_by_day$total_cases)~US_cases_by_day$Date))
+plot(US_cases_by_day$Date,US_cases_by_day$total_cases,las=1,type='p',pch=16, ylab = ' ',xlab='',log='y')
+mtext(text = 'Date',side = 1,line = -1,outer = T,cex = 1.4,adj = 0.55)
+fit_lm <- lm(log(US_cases_by_day$total_cases)~US_cases_by_day$Date)
+points(US_cases_by_day$Date,exp(fit_lm$fitted.values),type='l',lwd=2,col=2,lty=2)
+
+# Plot regression line for data starting on Feb 29th
+fit_lm2 <- lm(log(US_cases_by_day$total_cases[39:nrow(US_cases_by_day)])~US_cases_by_day$Date[39:nrow(US_cases_by_day)])
+points(US_cases_by_day$Date[39:nrow(US_cases_by_day)],exp(fit_lm2$fitted.values),type='l',lwd=2,lty=1,col='blue')
+#dev.off()
+
+```
+
+We used data compiled by John Hopkins University Center for Systems Science and Engineering [@Dong2020]. The United States has seen exponential growth in the number of cases, especially since February 29th (Fig. \ref{fig:cases_vs_time}). The exponential growth rate, and corresponding doubling time, has yet to arrive at an equilibrium for the US as a whole (Fig. \ref{fig:changing_measurements_with_time}). This may also be due to the need for more data to achieve high enough statistical power [@White2019]. Country-level results, however, hide underlying dynamics within each state. 
+
+```{r changing_measurements_with_time,echo=F,warning=F,message=F, fig.height=5,eval=T,fig.cap='The effect of each additional day of data on (a) exponential growth rate parameter, (b) standard error of the exponential growth rate parameter, (c) doubling time, and (d) the $R^2$ value for a fitted exponential curve. \\label{fig:changing_measurements_with_time}'}
+# Panel plot where various metrics change with the addition of time
+
+# exponetial growth, doubling time, lots of other things
+
+calc_slope <- function(y){
+  y = as.numeric(na.omit(y))
+  x = 1:length(y)
+  regression = summary(lm(log(y)~x))
+  return(as.numeric(regression$coefficients[2,1]))
+}
+
+calc_slope_error <- function(y){
+  y = as.numeric(na.omit(y))
+  x = 1:length(y)
+  regression = summary(lm(log(y)~x))
+  return(as.numeric(regression$coefficients[2,2]))
+}
+
+
+calc_r2 <- function(y){
+  y = as.numeric(na.omit(y))
+  x = 1:length(y)
+  regression = summary(lm(log(y)~x))
+  return(as.numeric(regression$r.squared))
+}
+
+create_subsamples <- function(x,y){
+  subsamples = matrix(rep(y,times=length(y)),nrow=length(y),ncol=length(y),byrow = T)
+  subsamples[upper.tri(subsamples)] = NA
+  
+  return(subsamples)
+}
+
+subsamples <- create_subsamples(US_cases_by_day$Date,US_cases_by_day$total_cases)
+par(mfrow=c(2,2),oma=c(4,0.5,0.5,0.5),mar=c(0.5,4,0.5,0.5))
+
+slope_values=apply(X = subsamples[3:nrow(subsamples),],1,FUN = calc_slope)
+plot(3:nrow(subsamples),slope_values,type='o',pch=16,ylab='Growth rate parameter',xlab='',xaxt='n',las=1,cex.lab=1.2)
+mtext(text = '(a)',side = 3,line = -1.5,outer = F,adj = 0.9)
+
+slope_error_values=apply(X = subsamples[3:nrow(subsamples),],1,FUN = calc_slope_error)
+plot(US_cases_by_day$Date[3:nrow(subsamples)],slope_error_values,type='o',pch=16,ylab='Standard error of growth rate',xlab='',las=1,cex.lab=1.2,xaxt='n')
+mtext(text = '(b)',side = 3,line = -1.5,outer = F,adj = 0.9)
+
+#slope_values=apply(X = subsamples[2:nrow(subsamples),],1,FUN = calc_slope)
+plot(3:nrow(subsamples),log(2)/slope_values,type='o',pch=16,ylab='Doubling time',xlab='',las=1,cex.lab=1.2)
+mtext(text = '(c)',side = 3,line = -1.5,outer = F,adj = 0.9)
+
+r2_values=apply(X = subsamples[3:nrow(subsamples),],1,FUN = calc_r2)
+plot(US_cases_by_day$Date[3:nrow(subsamples)],r2_values,type='o',pch=16,ylab='r2 of exponential fit',xlab='',las=1,cex.lab=1.2,ylim=c(0,1))
+mtext(text = '(d)',side = 3,line = -1.5,outer = F,adj = 0.9)
+
+mtext(text = 'Date',side = 1,line = 2,outer = T,adj = 0.55,cex.lab=1.4)
+```
+
+
+```{r changing_measurements_with_time_drop_beginning,eval=F,echo=F,warning=F,message=F,fig.width=5, fig.height=5,eval=F,fig.cap='The effect of each additional day of data on various metrics \\label{fig:measurements_with_time_drop_beginning}'}
+# Panel plot where various metrics change with the addition of time
+
+# exponetial growth, doubling time, lots of other things
+
+subsamples <- create_subsamples(US_cases_by_day$Date[40:nrow(US_cases_by_day)],US_cases_by_day$total_cases[40:nrow(US_cases_by_day)])
+par(mfrow=c(2,2))
+
+slope_values=apply(X = subsamples[2:nrow(subsamples),],1,FUN = calc_slope)
+plot(2:nrow(subsamples),slope_values,type='o',pch=16)
+
+plot(2:nrow(subsamples),log(2)/slope_values,type='o',pch=16)
+
+slope_error_values=apply(X = subsamples[2:nrow(subsamples),],1,FUN = calc_slope_error)
+plot(2:nrow(subsamples),slope_error_values,type='o',pch=16)
+
+r2_values=apply(X = subsamples[2:nrow(subsamples),],1,FUN = calc_r2)
+plot(2:nrow(subsamples),r2_values,type='o',pch=16)
+```
+
+
+```{r exponential_vs_logistic,eval=F,echo=F,warning=F,message=F,fig.width=5, fig.height=5,fig.cap='Comparison of exponential vs logistic over time... \\label{fig:exponential_vs_logistic}'}
+# Single plot of which function fits better
+
+#x <- as.numeric(strftime(US_cases_by_day$Date, format = "%j"))
+#x <- x - min(x)
+x <- US_cases_by_day$Date
+y <-US_cases_by_day$total_cases
+
+#x <- c(x[40:55],80)
+#y <- c(y[40:55],10000)
+
+par(mfrow=c(1,1))
+plot(x,y)
+exponential_mod=nls(y ~ y0 * exp(r*x),start=list(y0=0.18,r=0.1)) 
+lines(x,predict(exponential_mod),col='red')
+#Error calculation
+error=y-predict(exponential_mod)
+exponential_mod_error <- sqrt(mean(error2^2)) #1.527064
+
+curve(0.00141*exp(0.2777*x),from=0,to=54,add=T)
+
+curve(exp(0.1875 + 0.1167*x),from=0,to=54,add=T,col=2)
+
+plot(x,log(y))
+points(0:54,log(0.0014136) + 0.2776793*0:54)
+
+#logistic_mod <- nls(y ~ K / (1 + exp(Po + r * x)), start=list(Po=5, r=2, K=5))
+# logistic_mod=nls(y ~ ((K*y0)/(y0 + (K-y0)*exp(-r*x))), start=list(K=10000,r=0.1,y0=1))
+# #logistic_mod=nls(y ~ ((N0)/(1 + exp(-(K + r*x)))), start=list(K=100,r=0.1,N0=0.1))
+# plot(x,y)
+# lines(x,predict(logistic_mod),col='red')
+# #Error calculation
+# error2=y-predict(nonlin_mod)
+# nlm_error <- sqrt(mean(error2^2)) #1.527064
+```
+
+Therefore, we examined how the number of cases changed over time within each state. To properly compare the progression of the epidemic across states, we looked at the log number of cases since the first day a state reported 25 cases (Fig. \ref{fig:measurements_by_states}). On a log scale, a straight line of the cases over time indicates exponential growth where the slope of the line is the exponential growth parameter. We found considerable differences between states in how the outbreak has progressed (Fig. \ref{fig:measurements_by_states}). States like New York, New Jersey, and Michigan have experienced a doubling of cases approximately every two days. Conversely, Massachusetts has experienced a doubling time closer to five days. We mapped doubling time across the US and found regional differences where the West Coast and Northeast have seen large doubling times, i.e. slower outbreak dynamics (Fig. \ref{fig:measurements_by_states_map}).
+
+
+```{r measurements_by_states,echo=F,warning=F,message=F, fig.height=5,eval=T,fig.cap='The log number of cases over time for each individual state that recorded more than 25 cases over at least three days. The light grey diagonal lines represent the growth trajectory for doubling times of 2, 4, and 10 days. The log number of the starting value (intial number of cases on first day when at least 25 cases were recorded) had to be subtracted on the y-axis to standarize the graph across states. \\label{fig:measurements_by_states}'}
+
+# Filter out local county data and focus on states with at least 3 data points of 25 cases or more
+covid_by_state <- covid %>%
+  filter(!grepl(',', Province.State)) %>%
+  filter(Cases > 24) %>%
+  group_by(Province.State) %>%
+  filter(length(Cases)>3)
+
+# Record first date of more than 25 cases
+time_of_25plus_cases <- covid_by_state %>%
+  group_by(Province.State) %>%
+  filter(length(Cases)>3) %>%
+  summarize(first_confirmed = Date[which(Cases>24)[1]])
+
+covid_by_state = left_join(covid_by_state,time_of_25plus_cases,by="Province.State")
+
+
+starting_number = covid_by_state %>%
+  group_by(Province.State) %>%
+  summarize(starting_value = min(Cases))
+covid_by_state <- left_join(covid_by_state,starting_number)
+
+#write.csv(x = covid_by_state,file = 'COVID19_by_stae_USA_cleaned.csv',quote = F)
+
+#write.csv(x = covid_by_state,
+#          file = paste('covid_by_state_daily_updates/covid_responses_by_state',substr(Sys.time(),1,10),'.csv',sep=''))
+
+require(ggplot2)
+require(ggrepel)
+require(viridis)
+
+states <- ggplot(data=covid_by_state,aes(x=as.Date(Date,format='%m.%d.%y')-as.Date(first_confirmed,format='%m.%d.%y'), y=(log(Cases)) - (log(starting_value)),color=Province.State))  + 
+  geom_abline(slope = log(2)/2, intercept = 0,color='lightgrey',size=2) +
+  geom_abline(slope = log(2)/4, intercept = 0,color='lightgrey',size=2) +
+  geom_abline(slope = log(2)/10, intercept = 0,color='lightgrey',size=2) +
+  scale_color_viridis(discrete=T,begin = 0.1,end=0.9,option='viridis') +
+  geom_line(alpha=0.5) + 
+  theme_bw() + theme(legend.position = "none",axis.title.x = element_text(size = 14),axis.title.y = element_text(size = 14)) + 
+  geom_label_repel(data = subset(covid_by_state, DayOfYear== max(DayOfYear)),aes(label = Province.State),nudge_x = 0.1,na.rm = TRUE,segment.color = NA,fill=NA,label.size = NA,box.padding = 0) + 
+  coord_cartesian(xlim =c(0.5,14),ylim =c(-0.1,4.5)) +
+  ylab('log (Cases) - log (Starting value)') + xlab('Days since 25 cases recorded') + 
+  annotate("text", x=11.5, y=3.9, label='doubling every 2 days', size=3) +
+  annotate("text", x=13.3, y=2.7, label='doubling every 4 days', size=3) + 
+  annotate("text", x=7.9, y=0.4, label='doubling every 10 days', size=3) +
+  annotate("text", x=0.1, y=4.5, label='Created by @eastonrwhite', size=3,hjust = 0) +
+  annotate("text", x=0.1, y=4.4, label='Data from John Hopkins University/CDC', size=3,hjust = 0) 
+states
+  
+ggsave(filename = paste('state_responses',substr(Sys.time(),0,10),'.jpeg',sep=''),plot = states,device = 'jpeg',width = 10,height=6,units='in',dpi=500)
+
+#library(plotly)
+#gg <- ggplotly(states, tooltip = "Province.States")
+#highlight(gg, defaultValues = "Florida")
+```
+
+
+
+```{r measurements_by_states_map,echo=F,warning=F,message=F, fig.height=5,eval=T,fig.cap='Doubling time (in number of days) across the US states that recorded more than 25 cases over at least three days.\\label{fig:measurements_by_states_map}'}
+
+# Which states have largest doubling time???
+
+covid_by_state_doubling_time <- covid_by_state %>%
+  group_by(Province.State) %>%
+  filter(length(DayOfYear)>4) %>%
+  summarize(exponential_param = calc_slope(Cases), doubling_time = log(2)/calc_slope(Cases) ) %>% 
+  arrange(doubling_time)
+
+# Add back original data frame
+covid_by_state_doubling_time <- left_join(covid_by_state_doubling_time, covid_by_state)
+
+#write.csv(x = covid_by_state_doubling_time %>% group_by(Province.State) %>% filter(DayOfYear==min(DayOfYear)),
+#          file = paste('covid_by_state_daily_updates/covid_responses_by_state',substr(Sys.time(),1,10),'.csv',sep=''))
+
+# Add vector for state abbreviations
+require(usmap)
+state_pop <- statepop
+names(state_pop)[3] <- 'Province.State'
+covid_by_state_doubling_time <- left_join(covid_by_state_doubling_time,state_pop)
+
+
+doubling_map <- plot_usmap(data = covid_by_state_doubling_time, values = "doubling_time", labels=FALSE) + scale_fill_viridis(begin=0.1,end=0.9) +
+  theme(legend.position = "right") + 
+  theme(panel.background = element_rect(color = "black")) + 
+  labs(caption = "Created by: @eastonrwhite, Data from John Hopkins University/CDC",fill='Doubling time (days)',title=paste('Doubling time (days) as of',substr(Sys.time(),1,10)))
+  #labs(fill='Doubling time (days)',title=paste('Doubling time (days) as of',substr(Sys.time(),1,10)))
+doubling_map
+
+ggsave(filename = paste('doubling_map',substr(Sys.time(),0,10),'.jpeg',sep=''),plot = doubling_map,device = 'jpeg',width = 10,height=6,units='in',dpi=500)
+
+```
+
+
+
+# Conclusions and Future Work
+
+We found a large degree of heterogeneity in the number of cases over time across US states. These differences might be for statistical and data collection issues or demographic and governance patterns. The US is still early in the progression of the epidemic. Therefore, the number of detected cases might not have settled into a long-term trajectory. In addition, because of limited testing, there is potentially a large number of unobserved cases [@Perkins2020].
+
+Each US state varies considerably across a number of important axes: wealth, access to healthcare, number of international travelers, age distribution, population density, among other factors. In addition, much of the response to COVID-19 has been done at the state, as opposed to federal, government level in the US (citations). These responses have varied a lot with different laws and such... (citations). Future work will focus on explaining the distinct dynamics observed across the different US states. 
+
+
+
+
+
+
+# Code availability and acknowledglements
+
+All code and corresponding data is freely available at https://github.com/eastonwhite/COVID19_US_States. The original raw data has been compiled by the Johns Hopkins University Center for Systems Science and Engineering at (https://github.com/CSSEGISandData/COVID-19). The authors received no specific funding for this work.
+
+# References
