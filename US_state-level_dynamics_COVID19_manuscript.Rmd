@@ -19,20 +19,19 @@ output:
     df_print: paged
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_knit$set(root.dir = dirname(getwd()))
-```
+
 
 
 \begin{center}
 \textbf{\Large State-level variation for initial COVID-19 dynamics in the United States}
 \vspace{7 mm}
 	
-\textsc{Easton R. White\footnote{Easton.White@uvm.edu}$^{,2}$}
+\textsc{Easton R. White\footnote{Easton.White@uvm.edu}$^{,2}$, Laurent H\'{e}bert-Dufresne $^{3,4}$}
 \vspace{5 mm}
 
-\normalsize{\indent $^2$Department of Biology, University of Vermont, VT 05405, USA}
+\normalsize{\indent $^2$Department of Biology, University of Vermont, VT 05405, USA \\ {$^3$} Vermont Complex Systems Center, University of Vermont, VT 05405, USA \\ $^4$Department of Computer Science, University of Vermont, VT 05405, USA}
 \end{center}
+
 
 \vspace{5 mm}
 
@@ -66,6 +65,9 @@ pacman::p_load(patchwork, dplyr,tidyr,ggplot2,ggrepel,viridis,usmap)
 ```{r, echo=F,message=F,warning=F}
 # Load data for numbers in introduction
 covid <- read.csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Confirmed.csv',header=T)
+
+
+
 require(scales)
 #sum(covid[,ncol(covid)])
 #length(table(covid$Country.Region))
@@ -76,7 +78,7 @@ require(scales)
 
 # Introduction
 
-The global SARS-CoV-2 (COVID-19) pandemic began in Wuhan, China in late 2019 [@WHO2020]. As of `r paste(format(as.Date(substr(names(covid)[ncol(covid)],2,8),format = '%m.%d.%y'),'%B %d'),'th',sep='')`, `r comma(sum(covid[,ncol(covid)]))` cases have been reported across `r length(table(covid$Country.Region))` countries and regions. There has been several sets of efforts to track the progression of the outbreak across the world and within countries. For example, John Hopkins University Center for Systems Science and Engineering (CSSE) has compiled data from various sources, including the US Center for Disease Control and the World Health Organization, to present a global picture of COVID-19 cases and deaths [@Dong2020]. These efforts have allowed for international scientific research and political decision-making. Although data are collected at local scales (e.g. within hospitals), in an emerging pandemic data is typically reported at the country level. This allows for interesting comparisons between countries [@Anderson2020,@Jombart2020] and for information from an earlier affected country to be used to slow the outbreak in other places. For instance, South Korea was able to flatten their outbreak curve through early and widespread testing as well as strict quarantine policies (citation). However, country-level analyses still hide more local dynamics that are important to the overall epidemic progression.
+The global SARS-CoV-2 (COVID-19) pandemic began in Wuhan, China in late 2019 [@WHO2020]. As of `r paste(format(as.Date(substr(names(covid)[ncol(covid)-1],2,8),format = '%m.%d.%y'),'%B %d'),'th',sep='')`, `r comma(sum(covid[,ncol(covid)-1]))` cases have been reported across `r length(table(covid$Country.Region))` countries and regions. There has been several sets of efforts to track the progression of the outbreak across the world and within countries. For example, John Hopkins University Center for Systems Science and Engineering (CSSE) has compiled data from various sources, including the US Center for Disease Control and the World Health Organization, to present a global picture of COVID-19 cases and deaths [@Dong2020]. These efforts have allowed for international scientific research and political decision-making. Although data are collected at local scales (e.g. within hospitals), in an emerging pandemic data is typically reported at the country level. This allows for interesting comparisons between countries [@Anderson2020,@Jombart2020] and for information from an earlier affected country to be used to slow the outbreak in other places. For instance, South Korea was able to flatten their outbreak curve through early and widespread testing as well as strict quarantine policies (citation). However, country-level analyses still hide more local dynamics that are important to the overall epidemic progression.
 
 Spatial heterogeneity is important for population dynamics generally [@Levin1992,@Hanksi2001,@Schreiber2010] and in particular for understanding the progression of infectious disease dynamics [@Grenfell1995,@Park2012]. Spatial heterogeneity can include differences in local population density, movement patterns, suitability of environmental conditions for transmission, among other factors. For instance, @Keeling2001 showed how spatial distribution and size of farms affected the 2001 UK Foot and Mouth Epidemic.
 
@@ -92,7 +94,7 @@ Here we examine the progression of COVID-19 for state-level differences within t
 
 <!--Load data and start analyses-->
 
-```{r load_data,echo=F,warning=F,message=F}
+```{r old_data_cleaning,echo=F,eval=F,warning=F,message=F}
 # Load data here automatically
 require(dplyr)
 require(tidyr)
@@ -100,6 +102,7 @@ require(tidyr)
 #covid <- read.csv('time_series_19-covid-Confirmed.csv',header=T)
 # Use latest data from https://github.com/CSSEGISandData/COVID-19
 covid <- read.csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Confirmed.csv',header=T)
+
 
 #write.csv(x = covid,file = 'RawData_COVID19_all_countries.csv',quote = F)
 
@@ -118,8 +121,32 @@ covid <- covid %>%
   mutate(DayOfYear = strftime(Date, format = "%j"))
 
 
+covid <- covid %>%
+  filter(covid$Date < max(covid$Date))
 ```
 
+```{r updated_data_cleaning,echo=F,eval=T,warning=F,message=F}
+# Load data here automatically
+require(dplyr)
+require(tidyr)
+
+source('CompileTimeSeries.R')
+
+
+`%notin%` <- Negate(`%in%`)
+# Subset data just for the USA
+covid <- covid %>%
+  filter(Country.Region == 'US') %>%
+  filter(!grepl(',', Province.State)) %>% 
+  filter(Province.State %notin% c('Unassigned Location (From Diamond Princess)','Grand Princess Cruise Ship','Wuhan Evacuee','US','Diamond Princess'))
+
+# Change data to long format and adjust date variable
+covid <- covid %>%
+  #gather('Date','Cases',-Province.State,-Country.Region,-Lat,-Long) %>%
+  #mutate(Date = sub('.',replacement = '',Date)) %>%
+  mutate(Date = as.Date(Date,format='%m-%d-%y')) %>%
+  mutate(DayOfYear = as.numeric(strftime(Date, format = "%j")))
+```
 
 ```{r cases_vs_time,echo=F,warning=F,message=F, fig.height=4,eval=T,fig.cap='(Left panel) Cases versus time for the whole United States. (Right panel) Log number of cases versus time for the whole United States. The red, dashed line is the line of best fit for all the data and the blue, solid line is the line of best fit since Feburary 29th. \\label{fig:cases_vs_time}'}
 # Basic plots of cases over time and broken up by state (this might be in the methods section)
@@ -141,8 +168,8 @@ fit_lm <- lm(log(US_cases_by_day$total_cases)~US_cases_by_day$Date)
 points(US_cases_by_day$Date,exp(fit_lm$fitted.values),type='l',lwd=2,col=2,lty=2)
 
 # Plot regression line for data starting on Feb 29th
-fit_lm2 <- lm(log(US_cases_by_day$total_cases[39:nrow(US_cases_by_day)])~US_cases_by_day$Date[39:nrow(US_cases_by_day)])
-points(US_cases_by_day$Date[39:nrow(US_cases_by_day)],exp(fit_lm2$fitted.values),type='l',lwd=2,lty=1,col='blue')
+#fit_lm2 <- lm(log(US_cases_by_day$total_cases[39:nrow(US_cases_by_day)])~US_cases_by_day$Date[39:nrow(US_cases_by_day)])
+#points(US_cases_by_day$Date[39:nrow(US_cases_by_day)],exp(fit_lm2$fitted.values),type='l',lwd=2,lty=1,col='blue')
 #dev.off()
 
 ```
@@ -186,20 +213,22 @@ create_subsamples <- function(x,y){
 subsamples <- create_subsamples(US_cases_by_day$Date,US_cases_by_day$total_cases)
 par(mfrow=c(2,2),oma=c(4,0.5,0.5,0.5),mar=c(0.5,4,0.5,0.5))
 
-slope_values=apply(X = subsamples[3:nrow(subsamples),],1,FUN = calc_slope)
-plot(3:nrow(subsamples),slope_values,type='o',pch=16,ylab='Growth rate parameter',xlab='',xaxt='n',las=1,cex.lab=1.2)
+remove_beginning = 3 # takes number for how many intial data points to ignore because of noise
+
+slope_values=apply(X = subsamples[remove_beginning:nrow(subsamples),],1,FUN = calc_slope)
+plot(remove_beginning:nrow(subsamples),slope_values,type='o',pch=16,ylab='Growth rate parameter',xlab='',xaxt='n',las=1,cex.lab=1.2)
 mtext(text = '(a)',side = 3,line = -1.5,outer = F,adj = 0.9)
 
-slope_error_values=apply(X = subsamples[3:nrow(subsamples),],1,FUN = calc_slope_error)
-plot(US_cases_by_day$Date[3:nrow(subsamples)],slope_error_values,type='o',pch=16,ylab='Standard error of growth rate',xlab='',las=1,cex.lab=1.2,xaxt='n')
+slope_error_values=apply(X = subsamples[remove_beginning:nrow(subsamples),],1,FUN = calc_slope_error)
+plot(US_cases_by_day$Date[remove_beginning:nrow(subsamples)],slope_error_values,type='o',pch=16,ylab='Standard error of growth rate',xlab='',las=1,cex.lab=1.2,xaxt='n')
 mtext(text = '(b)',side = 3,line = -1.5,outer = F,adj = 0.9)
 
 #slope_values=apply(X = subsamples[2:nrow(subsamples),],1,FUN = calc_slope)
-plot(3:nrow(subsamples),log(2)/slope_values,type='o',pch=16,ylab='Doubling time',xlab='',las=1,cex.lab=1.2)
+plot(remove_beginning:nrow(subsamples),log(2)/slope_values,type='o',pch=16,ylab='Doubling time',xlab='',las=1,cex.lab=1.2)
 mtext(text = '(c)',side = 3,line = -1.5,outer = F,adj = 0.9)
 
-r2_values=apply(X = subsamples[3:nrow(subsamples),],1,FUN = calc_r2)
-plot(US_cases_by_day$Date[3:nrow(subsamples)],r2_values,type='o',pch=16,ylab='r2 of exponential fit',xlab='',las=1,cex.lab=1.2,ylim=c(0,1))
+r2_values=apply(X = subsamples[remove_beginning:nrow(subsamples),],1,FUN = calc_r2)
+plot(US_cases_by_day$Date[remove_beginning:nrow(subsamples)],r2_values,type='o',pch=16,ylab='r2 of exponential fit',xlab='',las=1,cex.lab=1.2,ylim=c(0,1))
 mtext(text = '(d)',side = 3,line = -1.5,outer = F,adj = 0.9)
 
 mtext(text = 'Date',side = 1,line = 2,outer = T,adj = 0.55,cex.lab=1.4)
@@ -270,7 +299,8 @@ Therefore, we examined how the number of cases changed over time within each sta
 
 # Filter out local county data and focus on states with at least 3 data points of 25 cases or more
 covid_by_state <- covid %>%
-  filter(!grepl(',', Province.State)) %>%
+  group_by(Date,Province.State) %>%
+  summarise(Cases = sum(Cases),Deaths=sum(Deaths),Recovered = sum(Recovered), DayOfYear = mean(DayOfYear)) %>%
   filter(Cases > 24) %>%
   group_by(Province.State) %>%
   filter(length(Cases)>3)
@@ -289,16 +319,13 @@ starting_number = covid_by_state %>%
   summarize(starting_value = min(Cases))
 covid_by_state <- left_join(covid_by_state,starting_number)
 
-#write.csv(x = covid_by_state,file = 'COVID19_by_stae_USA_cleaned.csv',quote = F)
+covid_by_state$DaysSince25 <- as.numeric(as.Date(covid_by_state$Date,format='%m.%d.%y')-as.Date(covid_by_state$first_confirmed,format='%m.%d.%y'))
 
-#write.csv(x = covid_by_state,
-#          file = paste('covid_by_state_daily_updates/covid_responses_by_state',substr(Sys.time(),1,10),'.csv',sep=''))
-
-require(ggplot2)
+require(ggplot2) 
 require(ggrepel)
 require(viridis)
 
-states <- ggplot(data=covid_by_state,aes(x=as.Date(Date,format='%m.%d.%y')-as.Date(first_confirmed,format='%m.%d.%y'), y=(log(Cases)) - (log(starting_value)),color=Province.State))  + 
+states <- ggplot(data=covid_by_state,aes(x=DaysSince25, y=(log(Cases)) - (log(starting_value)),color=Province.State))  + 
   geom_abline(slope = log(2)/2, intercept = 0,color='lightgrey',size=2) +
   geom_abline(slope = log(2)/4, intercept = 0,color='lightgrey',size=2) +
   geom_abline(slope = log(2)/10, intercept = 0,color='lightgrey',size=2) +
@@ -306,16 +333,16 @@ states <- ggplot(data=covid_by_state,aes(x=as.Date(Date,format='%m.%d.%y')-as.Da
   geom_line(alpha=0.5) + 
   theme_bw() + theme(legend.position = "none",axis.title.x = element_text(size = 14),axis.title.y = element_text(size = 14)) + 
   geom_label_repel(data = subset(covid_by_state, DayOfYear== max(DayOfYear)),aes(label = Province.State),nudge_x = 0.1,na.rm = TRUE,segment.color = NA,fill=NA,label.size = NA,box.padding = 0) + 
-  coord_cartesian(xlim =c(0.5,14),ylim =c(-0.1,4.5)) +
+  coord_cartesian(xlim =c(0.5,16),ylim =c(-0.1,5.5)) +
   ylab('log (Cases) - log (Starting value)') + xlab('Days since 25 cases recorded') + 
-  annotate("text", x=11.5, y=3.9, label='doubling every 2 days', size=3) +
-  annotate("text", x=13.3, y=2.7, label='doubling every 4 days', size=3) + 
+  annotate("text", x=13, y=4.2, label='doubling every 2 days', size=3) +
+  annotate("text", x=15, y=2.7, label='doubling every 4 days', size=3) + 
   annotate("text", x=7.9, y=0.4, label='doubling every 10 days', size=3) +
-  annotate("text", x=0.1, y=4.5, label='Created by @eastonrwhite', size=3,hjust = 0) +
-  annotate("text", x=0.1, y=4.4, label='Data from John Hopkins University/CDC', size=3,hjust = 0) 
+  annotate("text", x=0.1, y=5.5, label='Created by @eastonrwhite', size=3,hjust = 0) +
+  annotate("text", x=0.1, y=5.3, label='Data from John Hopkins University/CDC', size=3,hjust = 0) 
 states
   
-ggsave(filename = paste('state_responses',substr(Sys.time(),0,10),'.jpeg',sep=''),plot = states,device = 'jpeg',width = 10,height=6,units='in',dpi=500)
+ggsave(filename = paste('covid_by_state_daily_updates/state_responses',substr(Sys.time(),0,10),'.jpeg',sep=''),plot = states,device = 'jpeg',width = 10,height=6,units='in',dpi=500)
 
 #library(plotly)
 #gg <- ggplotly(states, tooltip = "Province.States")
@@ -330,7 +357,7 @@ ggsave(filename = paste('state_responses',substr(Sys.time(),0,10),'.jpeg',sep=''
 
 covid_by_state_doubling_time <- covid_by_state %>%
   group_by(Province.State) %>%
-  filter(length(DayOfYear)>4) %>%
+  filter(length(DayOfYear)>3) %>%
   summarize(exponential_param = calc_slope(Cases), doubling_time = log(2)/calc_slope(Cases) ) %>% 
   arrange(doubling_time)
 
@@ -354,7 +381,7 @@ doubling_map <- plot_usmap(data = covid_by_state_doubling_time, values = "doubli
   #labs(fill='Doubling time (days)',title=paste('Doubling time (days) as of',substr(Sys.time(),1,10)))
 doubling_map
 
-ggsave(filename = paste('doubling_map',substr(Sys.time(),0,10),'.jpeg',sep=''),plot = doubling_map,device = 'jpeg',width = 10,height=6,units='in',dpi=500)
+ggsave(filename = paste('covid_by_state_daily_updates/doubling_map',substr(Sys.time(),0,10),'.jpeg',sep=''),plot = doubling_map,device = 'jpeg',width = 10,height=6,units='in',dpi=500)
 
 ```
 
