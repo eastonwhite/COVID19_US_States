@@ -220,7 +220,7 @@ states <- ggplot(data=covid_by_state,aes(x=DaysSince25, y=(log(Cases)) - (log(st
   annotate("text", x=0.1, y=6.3, label='Data from John Hopkins University/CDC', size=3,hjust = 0) 
 states
   
-ggsave(filename = paste('covid_by_state_daily_updates/state_responses',substr(Sys.time(),0,10),'.jpeg',sep=''),plot = states,device = 'jpeg',width = 10,height=6,units='in',dpi=500)
+#ggsave(filename = paste('covid_by_state_daily_updates/state_responses',substr(Sys.time(),0,10),'.jpeg',sep=''),plot = states,device = 'jpeg',width = 10,height=6,units='in',dpi=500)
 
 #library(plotly)
 #gg <- ggplotly(states, tooltip = "Province.States")
@@ -259,7 +259,7 @@ doubling_map <- plot_usmap(data = covid_by_state_doubling_time, values = "doubli
   #labs(fill='Doubling time (days)',title=paste('Doubling time (days) as of',substr(Sys.time(),1,10)))
 doubling_map
 
-ggsave(filename = paste('covid_by_state_daily_updates/doubling_map',substr(Sys.time(),0,10),'.jpeg',sep=''),plot = doubling_map,device = 'jpeg',width = 10,height=6,units='in',dpi=500)
+#ggsave(filename = paste('covid_by_state_daily_updates/doubling_map',substr(Sys.time(),0,10),'.jpeg',sep=''),plot = doubling_map,device = 'jpeg',width = 10,height=6,units='in',dpi=500)
 
 ```
 
