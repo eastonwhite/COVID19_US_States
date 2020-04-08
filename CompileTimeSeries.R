@@ -27,5 +27,5 @@ covid <- rbind(covid,single_day)
 }
 
 
-write.csv(file = 'RawDataFiles/CompiledCovidData_all_Countries.csv',x = covid ,quote=F)
+#write.csv(file = 'RawDataFiles/CompiledCovidData_all_Countries.csv',x = covid ,quote=F)
 
