@@ -24,28 +24,28 @@ output:
 
 
 \begin{center}
-\textbf{\Large State-level variation for initial COVID-19 dynamics in the United States: The role of local government interventions}
-\vspace{7 mm}
+\textbf{\Large State-level variation of initial COVID-19 dynamics in the United States: The role of local government interventions}
+\vspace{5 mm}
 	
 \textsc{Easton R. White\footnote{Easton.White@uvm.edu}$^{,2}$, Laurent H\'{e}bert-Dufresne $^{3,4}$}
-\vspace{5 mm}
+\vspace{3 mm}
 
 \normalsize{\indent $^2$Department of Biology, University of Vermont, VT 05405, USA \\ {$^3$} Vermont Complex Systems Center, University of Vermont, VT 05405, USA \\ $^4$Department of Computer Science, University of Vermont, VT 05405, USA}
 \end{center}
 
 
-\vspace{5 mm}
+\vspace{3 mm}
 
 \textbf{Abstract}
 
-In the development of an epidemic, metrics such as $R_0$, doubling time, and case fatality rates are important in understanding and predicting the course of an epidemic. However, if collected over country or regional scales, these metrics hide important smaller-scale, local dynamics. We examine how commonly used epidemiological metrics differ for each individual state within the United States during the initial COVID-19 outbreak. We found that the case number, and trajectory of cases, differs considerably between states. We show that early non-pharmaceutical, government actions, were the most important determinant of epidemic dynamics. Although individual states are clearly not independent, they can serve as mini, natural experiments in how different demographic patterns and government responses can impact the course of an epidemic. Thus, these results should be used to better understand, in near real-time, what actions are working most effectively. 
+In the development of an epidemic, metrics such as $R_0$, doubling time, and case fatality rates are important in understanding and predicting the course of an epidemic. However, if collected over country or regional scales, these metrics hide important smaller-scale, local dynamics. We examine how commonly used epidemiological metrics differ for each individual state within the United States during the initial COVID-19 outbreak. We found that the case number, and trajectory of cases, differs considerably between states. We show that early non-pharmaceutical, government actions, were the most important determinant of epidemic dynamics. In particular, restricting restaurant operations was correlated with increased doubling times. Although individual states are clearly not independent, they can serve as mini, natural experiments in how different demographic patterns and government responses can impact the course of an epidemic. Thus, these results should be used to better understand what actions are working most effectively. 
 
 
-\vspace{3 mm}
+\vspace{1 mm}
 
 Keywords: SARS-CoV-2, COVID-19, spatial heterogeneity, doubling time
 
-\vspace{3 mm}
+\vspace{1 mm}
 
 Daily updates to figures in this manuscript are available at: https://github.com/eastonwhite/COVID19_US_States
 
@@ -59,7 +59,7 @@ if (!require("pacman",character.only = TRUE))
 
 # Keeping below source for github package. Ask Easton whether pacman works for github packages or not.
 #devtools::install_github("rensa/stickylabeller")
-pacman::p_load(patchwork, dplyr,tidyr,ggplot2,ggrepel,viridis,usmap)
+pacman::p_load(patchwork, dplyr, tidyr, ggplot2, ggrepel, viridis, usmap, stargazer)
 ```
 
 
@@ -79,15 +79,15 @@ require(scales)
 
 # Introduction
 
-The global SARS-CoV-2 (COVID-19) pandemic began in Wuhan, China in late 2019 [@WHO2020]. As of `r paste(format(as.Date(substr(names(covid)[ncol(covid)-1],2,8),format = '%m.%d.%y'),'%B %d'),'th',sep='')`, `r comma(sum(covid[,ncol(covid)-1]))` cases have been reported across `r length(table(covid$Country.Region))` countries and regions. There has been several sets of efforts to track the progression of the outbreak across the world and within countries. For example, John Hopkins University Center for Systems Science and Engineering (CSSE) has compiled data from various sources, including the US Center for Disease Control and the World Health Organization, to present a global picture of COVID-19 cases and deaths [@Dong2020]. These efforts have allowed for international scientific research and political decision-making. Although data are collected at local scales (e.g. within hospitals), in an emerging pandemic data is typically reported at the country level. This allows for interesting comparisons between countries [@Anderson2020,@Jombart2020] and for information from an earlier affected country to be used to slow the outbreak in other places. For instance, South Korea was able to flatten their outbreak curve through early and widespread testing as well as strict quarantine policies (citation). However, country-level analyses still hide more local dynamics that are important to the overall epidemic progression.
+The global SARS-CoV-2 (COVID-19) pandemic began in Wuhan, China in late 2019 [@WHO2020]. As of `r paste(format(as.Date(substr(names(covid)[ncol(covid)-1],2,8),format = '%m.%d.%y'),'%B %d'),'^{th}',sep='')`, `r comma(sum(covid[,ncol(covid)-1]))` cases have been reported across `r length(table(covid$Country.Region))` countries and regions. There have been several sets of efforts to track the progression of the outbreak across the world and within countries. For example, John Hopkins University Center for Systems Science and Engineering (CSSE) has compiled data from various sources, including the US Center for Disease Control and the World Health Organization, to present a global picture of COVID-19 cases and deaths [@Dong2020]. These efforts have allowed for international scientific research and political decision-making. Although data are collected at local scales (e.g. within hospitals), in an emerging pandemic, data are typically reported at the country level. This allows for interesting comparisons between countries [@Anderson2020,@Jombart2020] and for information from an earlier affected country to be used to slow the outbreak in other places. For instance, South Korea was able to flatten their outbreak curve through early and widespread testing as well as strict quarantine policies (citation). However, country-level analyses still hide more local dynamics that are important to the overall epidemic progression [@Lin2020].
 
-Spatial heterogeneity is important for population dynamics generally [@Levin1992,@Hanksi2001,@Schreiber2010] and in particular for understanding the progression of infectious disease dynamics [@Grenfell1995,@Park2012]. Spatial heterogeneity can include differences in local population density, movement patterns, suitability of environmental conditions for transmission, among other factors. For instance, @Keeling2001 showed how spatial distribution and size of farms affected the 2001 UK Foot and Mouth Epidemic.
+Spatial heterogeneity is important for population dynamics generally [@Levin1992,@Hanski2001,@Schreiber2010] and in particular for understanding the progression of infectious disease dynamics [@Grenfell1995,@Park2012]. Spatial heterogeneity can include differences in local population density, movement patterns, suitability of environmental conditions for transmission, among other factors. For instance, @Keeling2001 showed how spatial distribution and size of farms affected the 2001 UK Foot and Mouth Epidemic.
 
 <!--
 For the current COVID-19 outbreak, researchers have noted the different trajectories even within countries. For example, in China... (citations). MORE TEXT HERE.
 -->
 
-Here we examine the progression of COVID-19 for state-level differences within the United States. We examine how commonly-used metrics, including doubling time, can vary state to state and compared to the US as a whole. Although not independent units, we can use state-level data to understand the progression of the outbreak across different replicates within a country. We then show that demography, education, wealth, and other hypotheses were poor predictors of doubling time. Instead, we show that doubling time was more tightly correlated with state-level governmental actions, including restricting businesses. We also provide a link to daily updates of our findings as the exact quantitative results are likely to change over the course of the epidemic. 
+Here we examine the progression of COVID-19 at the state level within the United States. We examine how commonly-used metrics, including doubling time, can vary by state. Although not independent units, we can use state-level data to understand the progression of the outbreak across different replicates within a country [@Adolph2020]. We then show that across measures of demography, education, health, and wealth, only population density was correlated with doubling time. Instead, we show that doubling time was more tightly correlated with state-level governmental actions, including restricting businesses. 
 
 # Results and Discussion
 
@@ -170,7 +170,7 @@ Therefore, we examined how the number of cases changed over time within each sta
 
 ## State-level variation in COVID-19 trajectories
 
-We found considerable differences between states in how the outbreak has progressed (Fig. \ref{fig:measurements_by_states}). States like New York, New Jersey, and Michigan have experienced a doubling of cases approximately every two days. Conversely, Massachusetts has experienced a doubling time closer to five days. We mapped doubling time across the US and found regional differences where the West Coast and Northeast have seen large doubling times, i.e. slower outbreak dynamics (Fig. \ref{fig:measurements_by_states_map}).
+We found considerable differences between states in how the outbreak has progressed (Fig. \ref{fig:measurements_by_states}). States like New York, New Jersey, Michigan, and Indiana have experienced a doubling of cases every two or three days. Conversely, Washington has experienced a doubling time closer to six days. These doubling times are, of course, changing over time. We mapped doubling time across the US and found regional differences where the West Coast and Northeast have seen large doubling times, i.e. slower outbreak dynamics (Fig. \ref{fig:measurements_by_states_map}).
 
 
 ```{r measurements_by_states,echo=F,warning=F,message=F, fig.height=5,eval=T,fig.cap='The log number of cases over time for each individual state that recorded more than 25 cases over at least three days. The light grey diagonal lines represent the growth trajectory for doubling times of 2, 4, and 10 days. The log number of the starting value (intial number of cases on first day when at least 25 cases were recorded) had to be subtracted on the y-axis to standarize the graph across states. \\label{fig:measurements_by_states}'}
@@ -330,7 +330,7 @@ covid_by_state_doubling_time <- covid_by_state %>%
 
 
 
-```{r,overall_doubling_by_predictors,echo=F,warning=F,message=F,eval=T,fig.cap='Doubling time (in number of days)....\\label{fig:overall_doubling_by_predictors}'}
+```{r,overall_doubling_by_predictors,echo=F,warning=F,fig.height=10,message=F,eval=T,fig.cap='Doubling time (in number of days)....\\label{fig:overall_doubling_by_predictors}'}
 # Combine doubling time with demographic and other indicators 
 
 # Set up data frame of demographic information
@@ -376,29 +376,35 @@ par(mfrow=c(4,3),mar=c(4,0.3,1,0),oma=c(0,5,0.5,0.5))
 
 # Density factors
 plot(all_data_by_state$POPDEN_log,all_data_by_state$doubling_time,pch=16,las=1,ylab='',xlab='log (Population density)')
-plot(all_data_by_state$POPDEN_URBAN,all_data_by_state$doubling_time,pch=16,las=1,ylab='',xlab='Population density in urban areas')
-plot(all_data_by_state$POPDEN_RURAL,all_data_by_state$doubling_time,pch=16,las=1,ylab='',xlab='Population density in rural areas') #MAYBE?
-plot(all_data_by_state$POPPCT_URBAN,all_data_by_state$doubling_time,pch=16,las=1,ylab='',xlab='Population percent in Urban')
-plot(all_data_by_state$POPDEN_UC,all_data_by_state$doubling_time,pch=16,las=1,ylab='',xlab='Population percent in Urban')
+plot(all_data_by_state$POPDEN_URBAN,all_data_by_state$doubling_time,pch=16,las=1,ylab='',xlab='Population density in urban areas',yaxt='n')
+plot(all_data_by_state$POPDEN_RURAL,all_data_by_state$doubling_time,pch=16,las=1,ylab='',xlab='Population density in rural areas',yaxt='n') 
+plot(all_data_by_state$POPPCT_URBAN,all_data_by_state$doubling_time,pch=16,las=1,ylab='',xlab='Population percent in urban areas')
+plot(all_data_by_state$POPDEN_UC,all_data_by_state$doubling_time,pch=16,las=1,ylab='',xlab='Population percent in urban centers',yaxt='n')
 
 # Health and schooling
-plot(all_data_by_state$Life_expectancy,all_data_by_state$doubling_time,pch=16,las=1,ylab='',xlab='Life expectancy (years)')
+plot(all_data_by_state$Life_expectancy,all_data_by_state$doubling_time,pch=16,las=1,ylab='',xlab='Life expectancy (years)',yaxt='n')
 plot(all_data_by_state$Percent65_plus,all_data_by_state$doubling_time,pch=16,las=1,ylab='',xlab='Percent of population above 65+')
-plot(all_data_by_state$GNI_per_capita_inthousands_of_USD_2011PPP.,all_data_by_state$doubling_time,pch=16,las=1,ylab='',xlab='Gross income per capita (1000s of USD)')
-plot(all_data_by_state$Expected_years_schooling,all_data_by_state$doubling_time,pch=16,las=1,ylab='',xlab='Expected years of schooling')
+plot(all_data_by_state$GNI_per_capita_inthousands_of_USD_2011PPP.,all_data_by_state$doubling_time,pch=16,las=1,ylab='',xlab='Gross income per capita (1000s of USD)',yaxt='n')
+plot(all_data_by_state$Expected_years_schooling,all_data_by_state$doubling_time,pch=16,las=1,ylab='',xlab='Expected years of schooling',yaxt='n')
 
 # Other indicators
 plot(all_data_by_state$Vaccination_Rate,all_data_by_state$doubling_time,pch=16,las=1,ylab='',xlab='Yearly flu vaccination rate')
-plot(all_data_by_state$VolunteerRate2015_Americorps,all_data_by_state$doubling_time,pch=16,las=1,ylab='',xlab='Volunteer rate')
+plot(all_data_by_state$VolunteerRate2015_Americorps,all_data_by_state$doubling_time,pch=16,las=1,ylab='',xlab='Volunteer rate',yaxt='n')
+
+# Tightness score
+
+plot(all_data_by_state$TightnessScore,all_data_by_state$doubling_time,pch=16,las=1,ylab='',xlab='Tightness score',yaxt='n')
 
 mtext(text = 'Doubling time',side = 2,line = 2,outer = T,cex=1.2)
 
 ```
 
-We found that demography, education, and wealth were poor predictors of the state-level doubling times (Fig. \ref{fig:overall_doubling_by_predictors}). Therefore, we also examined the correlation between doubling time and state government interventions, and timing of those interventions. We specifically looked at whether or not a state had implemented a specific action by the first day they had 25 or more cases. We looked at closing of public schools, limiting large gatherings (usually of more than 10 people), restricting business, and stay at home orders. Of these factors, only restricting businesses was a significant predictor of doubling time (Fig. \ref{fig:overall_doubling_by_actions}). 
+Except for population density and percent of population living in rural areas, we found that demography, education, and wealth were poor predictors of the state-level doubling times (Fig. \ref{fig:overall_doubling_by_predictors}). Therefore, we also examined the correlation between doubling time and state government interventions, and timing of those interventions. We specifically looked at whether or not a state had implemented a specific action by the first day they had 25 or more cases. We adjusted this number to 100 cases for more severe restrictions like closing all non-essential business or stay at home mandates). We looked at closing of public schools, limiting large gatherings (usually of more than 10 people), restricting business, and stay at home orders. Of these factors, only restricting businesses, specifically resturants, was a significant predictor of doubling time (Fig. \ref{fig:overall_doubling_by_actions}, Table 1). These restrictions were also additive, as states that implemented more actions early had higher doubling times (Fig. \ref{fig:overall_doubling_by_actions}).
+
+Lastly, after accounting for population density, a state's "tightness" score was also correlated with doubling time. A state with a high tightness score has "many strongly enforced rules and little tolerance for deviance" [@Harrington2014]. We expected that states with highly enforced rules should have higher doubling times compared to "loose" states. Instead, we found that opposite where tight states had low doubling times and faster disease spread. We hypothesis this may be the result of people in tight cultures finding it more difficult to adjust their behavior when new rules are imposed. More work has to be done to understand this relationship though.
 
 
-```{r,overall_doubling_by_actions,echo=F,warning=F,message=F, fig.height=5,eval=T,fig.cap='Doubling time (in number of days) across the US states that recorded more than 25 cases over at least three days.\\label{fig:overall_doubling_by_actions}'}
+```{r,overall_doubling_by_actions,echo=F,warning=F,message=F, fig.height=6,eval=T,fig.cap='Doubling time (in number of days) across the US states that recorded more than 25 cases over at least three days.\\label{fig:overall_doubling_by_actions}'}
 # Combine doubling time with government actions and build plots
 
 
@@ -466,11 +472,11 @@ mtext(text = 'Doubling time (days)',side = 2,outer = T,line=2.5,cex.lab=1.2)
 ```{r, finding_best_model,echo=F,results='asis',warning=FALSE,message=FALSE,error=FALSE}
 require(MASS)
 
-mymod <- with(all_data_by_state,lm(doubling_time~RestrictBusinesses + ClosePublicSchools + LimitGatherings + StayAtHome + RestrictRestaurants + POPDEN_log + POPPCT_RURAL + Percent65_plus + Vaccination_Rate + VolunteerRate2015_Americorps + Life_expectancy + GNI_per_capita_inthousands_of_USD_2011PPP. + Expected_years_schooling + TightnessScore))
+mymod <- with(all_data_by_state,lm(doubling_time~RestrictBusinesses + ClosePublicSchools + LimitGatherings + StayAtHome + RestrictRestaurants + POPDEN_log + POPPCT_RURAL + Percent65_plus + Vaccination_Rate + VolunteerRate2015_Americorps  + GNI_per_capita_inthousands_of_USD_2011PPP. + Expected_years_schooling + TightnessScore))
 
 fit1_lm <- stepAIC(mymod,direction='both',trace = FALSE)
 
-#summary(fit1_lm)
+summary(fit1_lm)
 
 require(stargazer)
 stargazer(fit1_lm, type = "latex", title="Best fit linear model estimates.\\label{tab:best_fit_model}", dep.var.labels=c("Doubling time"),covariate.labels=c("Restrict Restaurants","log (Population density)","Population percent in rural areas","Tightness score"),omit.stat=c("LL","ser","f"), no.space=TRUE,ci=TRUE,model.numbers = FALSE, notes = "",header=FALSE)
@@ -516,7 +522,7 @@ text(all_data_by_state2$testkits_per_capita,all_data_by_state2$doubling_time,lab
 
 # Conclusions and Future Work
 
-We found a large degree of heterogeneity in the number of cases over time across US states. After state-level government actions were implemented, doubling time was most strongly correlated to restrictions on businesses. More detailed work will be needed to understand how these dynamics differ within each state, especially as many government actions started on these more local scales.
+We found a large degree of heterogeneity in the number of cases over time across US states. After state-level government actions were implemented, doubling time was most strongly correlated to restrictions on businesses, in particular restaurants. More detailed work will be needed to understand how these dynamics differ within each state, especially as many government actions started on more local scales.
 
 
 
