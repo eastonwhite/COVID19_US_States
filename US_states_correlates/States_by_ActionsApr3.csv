@@ -1,4 +1,4 @@
-﻿Province.State,StateOfEmergency,ClosePublicSchools,LimitGatherings,Restraurant,RestrictBusinesses,StayAtHome,PercentMobilityChange
+﻿Province.State,StateOfEmergency,ClosePublicSchools,LimitGatherings,RestrictRestaurants,RestrictBusinesses,StayAtHome,PercentMobilityChange
 Alabama,3/13/20,3/18/20,3/20/20,3/20/20,NA,4/4/20,-18
 Alaska,3/11/20,3/16/20,3/24/20,NA,3/18/20,3/28/20,-34
 Arizona,3/11/20,3/16/20,3/20/20,3/20/20,NA,3/31/20,-26
