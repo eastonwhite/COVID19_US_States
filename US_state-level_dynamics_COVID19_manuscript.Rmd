@@ -36,19 +36,6 @@ output:
 
 \vspace{3 mm}
 
-\textbf{Abstract}
-
-During an epidemic, metrics such as $R_0$, doubling time, and case fatality rates are important in understanding and predicting the course of an epidemic. However, if collected over country or regional scales, these metrics hide important smaller-scale, local dynamics. We examine how commonly used epidemiological metrics differ for each individual state within the United States during the initial COVID-19 outbreak. We found that the case number, and trajectory of cases, differs considerably between states. We show that early non-pharmaceutical, government actions, were the most important determinant of epidemic dynamics. In particular, restricting restaurant operations was correlated with increased doubling times. Although individual states are clearly not independent, they can serve as small, natural experiments in how different demographic patterns and government responses can impact the course of an epidemic. 
-
-
-\vspace{1 mm}
-
-Keywords: SARS-CoV-2, COVID-19, spatial heterogeneity, doubling time
-
-\vspace{1 mm}
-
-Daily updates to figures in this manuscript are available at: https://github.com/eastonwhite/COVID19_US_States
-
 
 ```{r load_packages,echo=F,warning=F,message=F}
 if (!require("pacman",character.only = TRUE))
@@ -79,16 +66,7 @@ require(scales)
 
 # Introduction
 
-The global COVID-19 (caused by the SARS-CoV-2 virus) outbreak began in Wuhan, China in late 2019 [@WHO2020]. As of `r paste(format(as.Date(substr(names(covid)[ncol(covid)-1],2,8),format = '%m.%d.%y'),'%B %d'),sep='')`^th^, `r comma(sum(covid[,ncol(covid)-1]))` cases have been reported across `r length(table(covid$Country.Region))` countries and regions. There have been several sets of efforts to track the progression of the outbreak across the world and within countries. For example, John Hopkins University Center for Systems Science and Engineering (CSSE) has compiled data from various sources, including the US Center for Disease Control and the World Health Organization, to present a global picture of COVID-19 cases and deaths [@Dong2020]. These efforts have allowed for international scientific research and political decision-making. Although data are collected at local scales (e.g. within hospitals), in an emerging pandemic, data are typically reported at the country level. This allows for interesting comparisons between countries [@Anderson2020;@Jombart2020] and for information from an earlier affected country to be used to slow the outbreak in other places. For instance, South Korea was able to "flatten their outbreak curve" through early and widespread testing as well as strict quarantine policies [@Utsunomiya2020]. However, country-level analyses still hide more local dynamics that are important to the overall epidemic progression [@Lin2020;@Chin2020].
-
-Spatial heterogeneity is important for population dynamics generally [@Levin1992;@Hanski2001;@Schreiber2010] and in particular for understanding the progression of infectious disease dynamics [@Grenfell1995;@Park2012]. Spatial heterogeneity can include differences in local population density, movement patterns, suitability of environmental conditions for transmission, among other factors [@Grenfell1995;@Park2012;@St-Onge2020]. For instance, @Keeling2001 showed how spatial distribution and size of farms affected the 2001 UK Foot and Mouth Epidemic.
-
-<!--
-For the current COVID-19 outbreak, researchers have noted the different trajectories even within countries. For example, in China... (citations). MORE TEXT HERE.
--->
-
-Here we provide a descriptive analysis of the reported progression of COVID-19 at the state level within the United States. We examine how commonly-used metrics, focusing on doubling time, can vary by state. Clearly, controlled and randomized experiments of COVID-19 spread are not possible [@White2019b]. Therefore, although states are not independent units, we can use state-level data to understand the progression of the outbreak across different replicates within a country [@Adolph2020]. We show that across measures of demography, education, health, and wealth, only population density was correlated with doubling time. Further, we show that doubling time was more tightly correlated with state-level governmental actions, including restricting businesses.
-
+The global COVID-19 (caused by the SARS-CoV-2 virus) outbreak began in Wuhan, China in late 2019 [@WHO2020]. As of `r paste(format(as.Date(substr(names(covid)[ncol(covid)-1],2,8),format = '%m.%d.%y'),'%B %d'),sep='')`^th^, `r comma(sum(covid[,ncol(covid)-1]))` cases have been reported across `r length(table(covid$Country.Region))` countries and regions. 
 
 
 # Results and Discussion
@@ -109,7 +87,7 @@ source('CompileTimeSeries.R')
 covid <- covid %>%
   filter(Country.Region == 'US') %>%
   filter(!grepl(',', Province.State)) %>% 
-  filter(Province.State %notin% c('Unassigned Location (From Diamond Princess)','Grand Princess Cruise Ship','Wuhan Evacuee','US','Diamond Princess','Recovered','Grand Princess'))
+  filter(Province.State %notin% c('Unassigned Location (From Diamond Princess)','Grand Princess Cruise Ship','Wuhan Evacuee','US','Diamond Princess','Recovered','Grand Princess','Virgin Islands','Guam'))
 
 # Change data to long format and adjust date variable
 covid <- covid %>%
@@ -119,7 +97,7 @@ covid <- covid %>%
   mutate(DayOfYear = as.numeric(strftime(Date, format = "%j")))
 ```
 
-```{r measurements_by_states2,echo=F,warning=F,message=F, fig.height=5,eval=T,fig.cap='(a) The log number of cases over time for each individual state for the 10 days since their first day of 25 total cases. (b) The log number of cases over time for each individual state for the most recent 10 days. The light grey diagonal lines represent the growth trajectory for doubling times of 2, 4, and 10 days. The log number of the starting value (intial number of cases on first day when at least 25 cases were recorded) had to be subtracted on the y-axis to standarize the graph across states. (c) Rolling doubling times calculated over 10-day windows for each individual states. (d) Distributions of state-level doubling times early and more recent in the course of the outbreak. The figure was produced on 14-Apr-2020.\\label{fig:measurements_by_states}'}
+```{r measurements_by_states2,echo=F,warning=F,message=F, fig.height=5,eval=T,fig.cap='(a) The log number of cases over time for each individual state for the 10 days since their first day of 25 total cases. (b) The log number of cases over time for each individual state for the next 10 days. The light grey diagonal lines represent the growth trajectory for doubling times of 2, 4, and 10 days. The log number of the starting value (initial number of cases on first day when at least 25 cases were recorded) had to be subtracted on the y-axis to standardize the graph across states. (c) Rolling doubling times calculated over 10-day windows for each individual states. (d) Distributions of state-level doubling times early and more recent in the course of the outbreak.\\label{fig:measurements_by_states}'}
 
 # Filter out local county data and focus on states with at least 3 data points of 25 cases or more
 
@@ -155,7 +133,7 @@ states_early <- ggplot(data=covid_by_state %>% filter(DaysSince25<11),aes(x=Days
   geom_abline(slope = log(2)/10, intercept = 0,color='lightgrey',size=2) +
   scale_color_viridis(discrete=T,begin = 0.1,end=0.9,option='viridis') +
   geom_line(alpha=0.5) + 
-  theme_bw() + theme(legend.position = "none",axis.title.x = element_text(size = 10),axis.title.y = element_text(size = 10)) + 
+  theme_bw() + theme(legend.position = "none",axis.title.x = element_text(size = 10),axis.title.y = element_text(size = 10),panel.border = element_blank(),panel.grid.major = element_blank(),panel.grid.minor = element_blank(), axis.line = element_line(colour = "black")) + 
   ylab('log (Cases) - log (Starting value)') + xlab('Days since 25 cases recorded') + 
   annotate("text", x=6, y=2.5, label='doubling every 2 days', size=3) +
   annotate("text", x=7, y=1.2, label='doubling every 4 days', size=3) + 
@@ -165,7 +143,7 @@ states_early <- ggplot(data=covid_by_state %>% filter(DaysSince25<11),aes(x=Days
 
 
 
-######### TRENDS IN LAST 10 DAYS ######
+######### TRENDS IN NEXT 10 DAYS ######
 
 #%>% filter(DayOfYear>97)
 
@@ -179,24 +157,23 @@ covid_by_state <- covid %>%
 # Record first date of more than 25 cases
 covid_by_state <- covid_by_state %>%
   group_by(Province.State) %>%
-  #mutate(first_confirmed = Date[which(Cases>24)[1]]) %>%
-  mutate(first_confirmed = as.Date(tail(covid_by_state$Date,1)-9)) %>%
-  filter(Date>tail(covid_by_state$Date,1)-10) %>%
+  mutate(first_confirmed = Date[which(Cases>24)[1]]) %>%
+  mutate(DaysSince25 = as.Date(Date,format='%m.%d.%y')-as.Date(first_confirmed,format='%m.%d.%y')) %>%
+  filter(DaysSince25>10 & DaysSince25<21) %>%
   group_by(Province.State) %>%
-  mutate(starting_value = min(Cases)) %>%
-  mutate(DaysSince25 = as.Date(Date,format='%m.%d.%y')-as.Date(first_confirmed,format='%m.%d.%y'))
+  mutate(starting_value = min(Cases)) 
 
 
 #%>% filter(DayOfYear>97)
 
-states_late <- ggplot(data=covid_by_state,aes(x=DaysSince25, y=(log(Cases)) - (log(starting_value)),color=Province.State))  + 
+states_late <- ggplot(data=covid_by_state,aes(x=DaysSince25-11, y=(log(Cases)) - (log(starting_value)),color=Province.State))  + 
   geom_abline(slope = log(2)/2, intercept = 0,color='lightgrey',size=2) +
   geom_abline(slope = log(2)/4, intercept = 0,color='lightgrey',size=2) +
   geom_abline(slope = log(2)/10, intercept = 0,color='lightgrey',size=2) +
   scale_color_viridis(discrete=T,begin = 0.1,end=0.9,option='viridis') +
   geom_line(alpha=0.5) + 
-  theme_bw() + theme(legend.position = "none",axis.title.x = element_text(size = 10),axis.title.y = element_text(size = 10))   +
-  ylab('') + xlab('Most recent 10 days') + 
+  theme_bw() + theme(legend.position = "none",axis.title.x = element_text(size = 10),axis.title.y = element_text(size = 10),panel.border = element_blank(),panel.grid.major = element_blank(),panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))   +
+  ylab('') + xlab('Next 10 days') + 
   annotate("text", x=6, y=2.5, label='doubling every 2 days', size=3) +
   annotate("text", x=7, y=1.2, label='doubling every 4 days', size=3) + 
   annotate("text", x=7.5, y=0.5, label='doubling every 10 days', size=3) +
@@ -244,23 +221,27 @@ rollmean <- covid_by_state %>%
 
 rollmean_time <- ggplot(data = rollmean,aes(x=DaysSince25,y=log(2)/mean_10,color=Province.State)) + geom_line() +  scale_color_viridis(discrete=T,begin = 0.1,end=0.9,option='viridis') +
   geom_line(alpha=0.5) + 
-  theme_bw() + theme(legend.position = "none",axis.title.x = element_text(size = 10),axis.title.y = element_text(size = 10))   +
+  theme_bw() + theme(legend.position = "none",axis.title.x = element_text(size = 10),axis.title.y = element_text(size = 10),panel.border = element_blank(),panel.grid.major = element_blank(),panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))   +
   ylab('Rolling doubling time') + xlab('Days since 25 cases') 
 
 
 
 # Distribution of doubling times
 
-early_rollmean <- rollmean %>% filter(DaysSince25==10)
+early_rollmean <- rollmean %>%
+  filter(DaysSince25==10)
 early_rollmean$timing <- 'First 10 days'
 
-late_rollmean <- rollmean %>% filter(DayOfYear==max(DayOfYear))
-late_rollmean$timing <- 'Most recent 10 days'
+late_rollmean <- rollmean %>%
+  filter(DaysSince25==20)
+late_rollmean$timing <- 'Next 10 days'
 
 combined_rollmean = rbind(early_rollmean,late_rollmean)
 
-rollmean_dist <- ggplot(combined_rollmean, aes(x=log(2)/mean_10),color=as.factor(timing)) +  geom_density(alpha=.2,aes(fill=as.factor(timing) )) + theme_bw() + theme(legend.position = c(0.6, 0.6),axis.title.x = element_text(size = 10),axis.title.y = element_text(size = 10))   +
+rollmean_dist <- ggplot(combined_rollmean, aes(x=log(2)/mean_10),color=as.factor(timing)) +  geom_density(alpha=.2,aes(fill=as.factor(timing) )) + theme_bw() + theme(legend.position = c(0.65, 0.65),axis.title.x = element_text(size = 10),axis.title.y = element_text(size = 10),panel.border = element_blank(),panel.grid.major = element_blank(),panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))   +
   ylab('Frequency') + xlab('Doubling time (days)') + labs(fill = 'Time window')
+
+
 
 
 
@@ -270,37 +251,6 @@ annotate_figure(figure,bottom = text_grob(" ", color = "black",hjust = 0.9,vjust
 ```
 
 
-We used data compiled by John Hopkins University Center for Systems Science and Engineering [@Dong2020]. The United States has seen exponential growth in the number of cases, especially since February 29th (Fig. \ref{fig:cases_vs_time}). Country-level results, however, hide underlying dynamics within each state [@Lin2020;@Chin2020]. 
-
-Therefore, we examined how the number of cases changed over time within each state. To properly compare the progression of the epidemic across states, we looked at the log number of cases since the first day a state reported 25 (after which exponential curves were more reliable) cases (Fig. \ref{fig:measurements_by_states}). On a log scale, a straight line of the cases over time indicates exponential growth where the slope of the line is the exponential growth parameter. 
-
-
-
-
-
-
-
-## State-level variation in COVID-19 trajectories
-
-We found considerable differences between states in how the outbreak has progressed (Fig. \ref{fig:measurements_by_states}). These doubling times are, of course, changing over time. We found that doubling times for all states did increase with time and that the heterogeneity between states was reduced (Fig. \ref{fig:measurements_by_states}). We mapped doubling time across the US and found regional differences where the West and Northeast have seen large doubling times, i.e. slower outbreak dynamics (Fig. \ref{fig:measurements_by_states_map}).
-
-
-
-
-
-
-
-
-
-
-
-
-## Predictors of overall state-level trajectories
-
-Each US state varies considerably across a number of important axes: wealth, access to
-healthcare, number of international travelers, age distribution, population density, among
-other factors [@Chin2020]. In addition, much of the response to COVID-19 has been done at the state, as
-opposed to federal, government level in the US [@Gostin2020;@Adolph2020]. We examined three hypotheses to explain the state-level variation in COVID-19 trajectories: human demographics, wealth and education indicators, and governmental interventions. 
 
 
 ```{r, overall_doubling, echo=F}
@@ -309,6 +259,7 @@ covid_by_state <- covid %>%
   group_by(Date,Province.State) %>%
   summarise(Cases = sum(Cases),Deaths=sum(Deaths),Recovered = sum(Recovered), DayOfYear = mean(DayOfYear)) %>%
   filter(Cases > 24) 
+
 
 # Record first date of more than 25 cases
 covid_by_state <- covid_by_state %>%
@@ -331,7 +282,7 @@ covid_by_state_doubling_time <- covid_by_state %>%
   group_by(Province.State) %>%
   mutate(exponential_param = calc_slope(Cases), doubling_time = log(2)/calc_slope(Cases),
          exponential_param_early = calc_slope(Cases[DaysSince25<7]), doubling_time_early = log(2)/calc_slope(Cases[DaysSince25<7]),
-         exponential_param_late = calc_slope(Cases[DayOfYear>max(DayOfYear)-7]), doubling_time_late = log(2)/calc_slope(Cases[DayOfYear>max(DayOfYear)-7])) %>% 
+         exponential_param_late = calc_slope(Cases[DayOfYear>max(DayOfYear)-7]), doubling_time_late = log(2)/calc_slope(Cases[DayOfYear>max(DayOfYear)-7]),exponential_param_first3weeks = calc_slope(Cases[DaysSince25<22]), doubling_time_first3weeks = log(2)/calc_slope(Cases[DaysSince25<22])) %>% 
   arrange(doubling_time)
 
 
@@ -408,9 +359,6 @@ mtext(text = 'Doubling time',side = 2,line = 2,outer = T,cex=1.2)
 
 ```
 
-Given the large heterogeneity between states early on (Fig. \ref{fig:measurements_by_states}), we examined correlates of doubling time for only the first seven days after a state reached 25 total cases. We found that population density, flu vaccination rates, and wealth were all correlated with doubling times (Table 1). This suggests that demography might have been more important early in the outbreak, though testing differences between states may also have been important (Fig. \ref{fig:overall_doubling_by_testkits}, @Kaashoek2020).
-
-We then examined the overall (all days since 25 total cases) doubling times at the state level. Except for population density and percent of population living in rural areas, we found that demography, education, and wealth were poor predictors of the state-level overall doubling times (Fig. \ref{fig:overall_doubling_by_predictors}, Table 1). Therefore, we also examined the correlation between doubling time and state government interventions. We used information collected by @Adolph2020 on whether or not a state had implemented a specific action by the first day they had 25 or more cases. We adjusted this number to 150 cases for more severe restrictions like closing all non-essential business or stay at home mandates). We looked at closing of public schools, limiting large gatherings (usually of more than 10 people), restricting business, and stay at home orders [@Adolph2020]. Of these factors, only restricting businesses, specifically restaurants, was a significant predictor of doubling time (Fig. \ref{fig:overall_doubling_by_actions}, Table 1). These restrictions were also additive, as states that implemented more actions early had higher doubling times (Fig. \ref{fig:overall_doubling_by_actions}). The ordering of these restrictions was also fairly consistent between states (Fig. \ref{fig:timing_of_interventions}). While declaring a state of emergency is an obvious first intervention, closing public schools tend to be implemented at different times across states. More importantly, by the time government restrict businesses and declare a stay-at-home order, all other interventions tend to have already been implemented (Fig. \ref{fig:timing_of_interventions}, @Adolph2020).
 
 ```{r,overall_doubling_by_actions,echo=F,warning=F,message=F, fig.height=6,eval=T,fig.cap='Doubling time (in number of days) across the US states for five different statewide government restrictions: (a) limit gatherings (usually to less than 10 people) by first day of 25 cases, (b) close public schools by first day of 25 cases, (c) restrict restaurants by first day of 25 cases, (d) restrict non-essential businesses by first day of 150 cases, (e) stay at home order by first day of 150 cases, and (f) total number of restrictions before number of cases threshold. \\label{fig:overall_doubling_by_actions}'}
 # Combine doubling time with government actions and build plots
@@ -439,54 +387,44 @@ all_data_by_state$total_score = (all_data_by_state$LimitGatherings) + (all_data_
 # Build plot
 par(mfrow=c(2,3),mar=c(4.5,0.5,1,0),oma=c(0,5,0.5,0.5))
 #boxplot(all_data_by_state$doubling_time~all_data_by_state$StateOfEmergency,las=1)
-boxplot(all_data_by_state$doubling_time~all_data_by_state$LimitGatherings,las=1,xlab='Limit gatherings',xaxt='n')
+boxplot(all_data_by_state$doubling_time_first3weeks~all_data_by_state$LimitGatherings,las=1,xlab='Limit gatherings',xaxt='n')
 axis(side = 1,at = 1:2,labels = c('No','Yes'))
-points(all_data_by_state$LimitGatherings+1,all_data_by_state$doubling_time,pch=16)
+points(all_data_by_state$LimitGatherings+1,all_data_by_state$doubling_time_first3weeks,pch=16)
 mtext(text = '(a)',side = 3,line = -2,adj = 0.95)
 
-boxplot(all_data_by_state$doubling_time~all_data_by_state$ClosePublicSchools,las=1,xlab='Close schools',xaxt='n',yaxt='n')
+boxplot(all_data_by_state$doubling_time_first3weeks~all_data_by_state$ClosePublicSchools,las=1,xlab='Close schools',xaxt='n',yaxt='n')
 axis(side = 1,at = 1:2,labels = c('No','Yes'))
-points(all_data_by_state$ClosePublicSchools+1,all_data_by_state$doubling_time,pch=16)
+points(all_data_by_state$ClosePublicSchools+1,all_data_by_state$doubling_time_first3weeks,pch=16)
 mtext(text = '(b)',side = 3,line = -2,adj = 0.95)
 
-boxplot(all_data_by_state$doubling_time~all_data_by_state$RestrictRestaurants,las=1,xlab='Restrict restaurants',xaxt='n',yaxt='n')
+boxplot(all_data_by_state$doubling_time_first3weeks~all_data_by_state$RestrictRestaurants,las=1,xlab='Restrict restaurants',xaxt='n',yaxt='n')
 #text(2,5.2,labels = '*significant difference')
 axis(side = 1,at = 1:2,labels = c('No','Yes'))
-points(all_data_by_state$RestrictRestaurants+1,all_data_by_state$doubling_time,pch=16)
+points(all_data_by_state$RestrictRestaurants+1,all_data_by_state$doubling_time_first3weeks,pch=16)
 mtext(text = '(c)',side = 3,line = -2,adj = 0.95)
 
-boxplot(all_data_by_state$doubling_time~all_data_by_state$RestrictBusinesses,las=1,xlab='Restrict businesses',xaxt='n')
+boxplot(all_data_by_state$doubling_time_first3weeks~all_data_by_state$RestrictBusinesses,las=1,xlab='Restrict businesses',xaxt='n')
 #text(2,5.2,labels = '*significant difference')
 axis(side = 1,at = 1:2,labels = c('No','Yes'))
-points(all_data_by_state$RestrictBusinesses+1,all_data_by_state$doubling_time,pch=16)
+points(all_data_by_state$RestrictBusinesses+1,all_data_by_state$doubling_time_first3weeks,pch=16)
 mtext(text = '(d)',side = 3,line = -2,adj = 0.95)
 
-boxplot(all_data_by_state$doubling_time~all_data_by_state$StayAtHome,las=1,xlab='Stay at home mandate',xaxt='n',yaxt='n')
+boxplot(all_data_by_state$doubling_time_first3weeks~all_data_by_state$StayAtHome,las=1,xlab='Stay at home mandate',xaxt='n',yaxt='n')
 axis(side = 1,at = 1:2,labels = c('No','Yes'))
-points(all_data_by_state$StayAtHome+1,all_data_by_state$doubling_time,pch=16)
+points(all_data_by_state$StayAtHome+1,all_data_by_state$doubling_time_first3weeks,pch=16)
 mtext(text = '(e)',side = 3,line = -2,adj = 0.95)
 
 all_data_by_state$total_score[all_data_by_state$total_score==5]=4
-boxplot(all_data_by_state$doubling_time~all_data_by_state$total_score,las=1,xlab='Number of state actions',yaxt='n',xaxt='n')
+boxplot(all_data_by_state$doubling_time_first3weeks~all_data_by_state$total_score,las=1,xlab='Number of state actions',yaxt='n',xaxt='n')
 axis(side = 1,at = 1:5,labels = c('None','1','2','3','4 or 5'))
-points((all_data_by_state$total_score+1),all_data_by_state$doubling_time,pch=16)
+points((all_data_by_state$total_score+1),all_data_by_state$doubling_time_first3weeks,pch=16)
 mtext(text = '(f)',side = 3,line = -2,adj = 0.95)
 
 mtext(text = 'Doubling time (days)',side = 2,outer = T,line=2.5,cex.lab=1.2)
 
-
-
-#with(all_data_by_state,summary(lm(doubling_time~RestrictBusinesses + ClosePublicSchools + POPDEN_RURAL + POPDEN_URBAN + POPDEN_UA + POPDEN_UC + POPPCT_RURAL + POPPCT_URBAN + POPPCT_UA + POPPCT_UC + Percent65_plus + Vaccination_Rate + VolunteerRate2015_Americorps + Life_expectancy + GNI_per_capita_inthousands_of_USD_2011PPP. + Expected_years_schooling + TightnessScore)))
-
-#require(MASS)
-
-#mymod <- with(all_data_by_state,lm(doubling_time~RestrictBusinesses + ClosePublicSchools + POPDEN_RURAL + POPDEN_URBAN + POPDEN_UA + POPDEN_UC + POPPCT_RURAL + Percent65_plus + Vaccination_Rate + VolunteerRate2015_Americorps + Life_expectancy + GNI_per_capita_inthousands_of_USD_2011PPP. + Expected_years_schooling + TightnessScore))
-
-#fit1_lm <- stepAIC(mymod,direction='both')
 ```
 
 
-Lastly, after accounting for population density, a state's "tightness" score was also correlated with doubling time. A state with a high tightness score has "many strongly enforced rules and little tolerance for deviance" [@Harrington2014]. We expected that states with highly enforced rules should have higher doubling times compared to "loose" states. Instead, we found that opposite where tight states had low doubling times and faster disease spread. We hypothesis this may be the result of people in tight cultures finding it more difficult to adjust their behavior when new rules are imposed. More work has to be done to understand this relationship.
 
 
 ```{r, eval=T,out.width="0.8\\linewidth", include=TRUE, fig.align="center", fig.cap="Rank distribution of different interventions. Per state, every intervention is given a rank from 1 to 6 depending on when it was implemented (1 being the first put into place) and ties are given an average rank (e.g. 2.5 for tied 2nd and 3rd rank). \\label{fig:timing_of_interventions}", echo=FALSE}
@@ -497,26 +435,10 @@ knitr::include_graphics("US_state-level_dynamics_COVID19_manuscript_files/figure
 
 
 
-
-```{r, finding_best_model_old,eval=F,echo=F,results='asis',warning=FALSE,message=FALSE,error=FALSE}
-require(MASS)
-
-mymod <- with(all_data_by_state,lm(doubling_time~RestrictBusinesses + ClosePublicSchools + LimitGatherings + StayAtHome + RestrictRestaurants + POPDEN_log + POPPCT_RURAL + Percent65_plus + Vaccination_Rate + VolunteerRate2015_Americorps  + GNI_per_capita_inthousands_of_USD_2011PPP. + Expected_years_schooling + TightnessScore))
-
-fit1_lm <- stepAIC(mymod,direction='both',trace = FALSE)
-
-#summary(fit1_lm)
-
-require(stargazer)
-stargazer(fit1_lm, type = "latex", title="Best fit linear model estimates.\\label{tab:best_fit_model}", dep.var.labels=c("Doubling time"),covariate.labels=c("Restrict Restaurants","log (Population density)","Population percent in rural areas","Tightness score"),omit.stat=c("LL","ser","f"), no.space=TRUE,ci=TRUE,model.numbers = FALSE, notes = "",header=FALSE)
-
-```
-
-
 ```{r, finding_best_model,eval=T,echo=F,results='asis',warning=FALSE,message=FALSE,error=FALSE}
 require(MASS)
 
-overall_doubling <- with(na.omit(all_data_by_state),lm(doubling_time~RestrictBusinesses + ClosePublicSchools + LimitGatherings + StayAtHome + RestrictRestaurants + POPDEN_log + POPPCT_RURAL + Percent65_plus + Vaccination_Rate + VolunteerRate2015_Americorps  + GNI_per_capita_inthousands_of_USD_2011PPP. + Expected_years_schooling + TightnessScore))
+overall_doubling <- with(na.omit(all_data_by_state),lm(doubling_time_first3weeks~RestrictBusinesses + ClosePublicSchools + LimitGatherings + StayAtHome + RestrictRestaurants + POPDEN_log + POPPCT_RURAL + Percent65_plus + Vaccination_Rate + VolunteerRate2015_Americorps  + GNI_per_capita_inthousands_of_USD_2011PPP. + Expected_years_schooling + TightnessScore))
 overall_doubling_lm <- stepAIC(overall_doubling,direction='both',trace = FALSE)
 
 early_doubling <- with(na.omit(all_data_by_state),lm(doubling_time_early~RestrictBusinesses + ClosePublicSchools + LimitGatherings + StayAtHome + RestrictRestaurants + POPDEN_log + POPPCT_RURAL + Percent65_plus + Vaccination_Rate + VolunteerRate2015_Americorps  + GNI_per_capita_inthousands_of_USD_2011PPP. + Expected_years_schooling + TightnessScore))
@@ -525,29 +447,13 @@ early_doubling_lm <- stepAIC(early_doubling,direction='both',trace = FALSE)
 #summary(fit1_lm)
 
 require(stargazer)
-stargazer(early_doubling_lm,overall_doubling_lm, type = "latex", title="Best fitting linear models (according to AIC) and corresponding parameter estimates for the doubling time both early (first 7 days since 25 cases) and for the entire time period.\\label{tab:best_fit_model}", dep.var.labels=c("Early doubling time","Overall doubling time"),covariate.labels=c("Restrict Restaurants","log (Population density)","Vaccination rate","GNI per capita","Population percent in rural areas","Tightness score"),omit.stat=c("LL","ser","f"), no.space=TRUE,ci=TRUE,model.numbers = FALSE, notes = "",header=FALSE)
+stargazer(early_doubling_lm,overall_doubling_lm, type = "latex", title="Best fitting linear models (according to AIC) and corresponding parameter estimates for the doubling time both early (first 7 days since 25 cases) and for the entire time period.\\label{tab:best_fit_model}", dep.var.labels=c("Early doubling time","Overall doubling time"),covariate.labels=c("Close schools","Restrict restaurants","log (Population density)","Vaccination rate","GNI per capita","Population percent in rural areas","Tightness score"),omit.stat=c("LL","ser","f"), no.space=TRUE,ci=TRUE,model.numbers = FALSE, notes = "",header=FALSE)
 
 ```
 
 
 
-# Conclusions and Future Work
-
-We found a large degree of heterogeneity in the reported number of COVID-19 cases over time across US states. After state-level government actions were implemented, doubling time was most strongly correlated to restrictions on businesses, in particular restaurants. More detailed work will be needed to understand how these dynamics differ within each state, especially as many government actions started on more local scales.
-
-
-
-
-
-
-
-
-# Code availability and acknowledglements
-
-All code and corresponding data is freely available at https://github.com/eastonwhite/COVID19_US_States. The original raw data has been compiled by the Johns Hopkins University Center for Systems Science and Engineering at (https://github.com/CSSEGISandData/COVID-19). L.H.-D. acknowledges support from the National Institutes of Health 1P20 GM125498-01 Centers of Biomedical Research Excellence Award.
-
-
-
+<!--
 
 ## Data sources
 
@@ -558,15 +464,7 @@ All code and corresponding data is freely available at https://github.com/easton
 - volunteer rate (2015 Corporation for National and Community Service data https://www.nationalservice.gov/vcla/state-rankings-volunteer-rate)  
 - tightness scores @Harrington2014  
 - testing rates by state (COVID Tracking Project https://covidtracking.com/)  
-
-
-
-
-
-
-# References
-
-<div id="refs"></div>
+-->
 
 
 
@@ -598,8 +496,8 @@ par(mfrow=c(1,2),oma=c(1,1.5,0.5,0.5),mar=c(4,4,0.5,0.5))
 plot(US_cases_by_day$Date,US_cases_by_day$total_cases,las=1,type='p',pch=16, ylab = ' ',xlab='',log='y')
 mtext(text = 'Total number of US cases',cex=1.2,side = 2,line = 3.8)
 mtext(text = 'Date',side = 1,line = -1,outer = T,cex = 1.4,adj = 0.55)
-fit_lm <- lm(log(US_cases_by_day$total_cases)~US_cases_by_day$Date)
-points(US_cases_by_day$Date,exp(fit_lm$fitted.values),type='l',lwd=2,col=2,lty=2)
+#fit_lm <- lm(log(US_cases_by_day$total_cases)~US_cases_by_day$Date)
+#points(US_cases_by_day$Date,exp(fit_lm$fitted.values),type='l',lwd=2,col=2,lty=2)
 
 require(tidyquant)
 
@@ -608,15 +506,15 @@ rollmean <- US_cases_by_day %>%
     # tq_mutate args
     select     = total_cases,
     mutate_fun = rollapply, 
-    width      = 7,
+    width      = 10,
     align      = "right",
     FUN        = calc_slope,
-    col_rename = "mean_7"
+    col_rename = "mean_10"
   ) 
 
 
-plot(rollmean$Date,log(2)/rollmean$mean_7,type='o',pch=16,las=1,ylab='',xlab='',cex.lab=1.2,ylim=c(1.8,10))
-mtext(text = 'Doubling time (7-day windows)',cex=1.2,side = 2,line = 2)
+plot(rollmean$Date,log(2)/rollmean$mean_10,type='o',pch=16,las=1,ylab='',xlab='',cex.lab=1.2,ylim=c(1.8,25))
+mtext(text = 'Doubling time (10-day windows)',cex=1.2,side = 2,line = 2)
 
 
 # Plot regression line for data starting on Feb 29th
@@ -659,9 +557,9 @@ states <- ggplot(data=covid_by_state,aes(x=DaysSince25, y=(log(Cases)) - (log(st
   geom_abline(slope = log(2)/10, intercept = 0,color='lightgrey',size=2) +
   scale_color_viridis(discrete=T,begin = 0.1,end=0.9,option='viridis') +
   geom_line(alpha=0.5) + 
-  theme_bw() + theme(legend.position = "none",axis.title.x = element_text(size = 14),axis.title.y = element_text(size = 14)) + 
+  theme_bw() + theme(legend.position = "none",axis.title.x = element_text(size = 14),axis.title.y = element_text(size = 14),panel.border = element_blank(),panel.grid.major = element_blank(),panel.grid.minor = element_blank(), axis.line = element_line(colour = "black")) + 
   geom_label_repel(data = subset(covid_by_state, DayOfYear== max(DayOfYear)),aes(label = Province.State),nudge_x = 0.1,na.rm = TRUE,segment.color = NA,fill=NA,label.size = NA,box.padding = 0) + 
-  coord_cartesian(xlim =c(0.5,40),ylim =c(-0.1,9)) +
+  coord_cartesian(xlim =c(0.5,50),ylim =c(-0.1,9.5)) +
   ylab('log (Cases) - log (Starting value)') + xlab('Days since 25 cases recorded') + 
   annotate("text", x=16, y=6.2, label='doubling every 2 days', size=3) +
   annotate("text", x=21, y=4.1, label='doubling every 4 days', size=3) + 
@@ -679,7 +577,7 @@ states
 
 \clearpage
 
-```{r measurements_by_states_map,echo=F,warning=F,message=F, fig.height=5,eval=T,fig.cap='Doubling time (in number of days) across the US states that recorded more than 25 cases over at least three days.\\label{fig:measurements_by_states_map}'}
+```{r measurements_by_states_map,echo=F,warning=F,message=F, fig.height=5,eval=T,fig.cap='Doubling time (in number of days) for the first three weeks after a state reached 25 cases.\\label{fig:measurements_by_states_map}'}
 
 
 #source('rollingmean.R')
@@ -687,9 +585,10 @@ states
 # Which states have largest doubling time???
 
 covid_by_state_doubling_time <- covid_by_state %>%
+  filter(DaysSince25<22) %>%
   group_by(Province.State) %>%
-  summarize(exponential_param = calc_slope(Cases), doubling_time = log(2)/calc_slope(Cases)) %>% 
-  arrange(doubling_time)
+  summarize(exponential_param_first3weeks = calc_slope(Cases), doubling_time_first3weeks = log(2)/calc_slope(Cases)) %>% 
+  arrange(doubling_time_first3weeks)
 
 # Add vector for state abbreviations
 require(usmap)
@@ -698,10 +597,10 @@ names(state_pop)[3] <- 'Province.State'
 covid_by_state_doubling_time <- left_join(covid_by_state_doubling_time,state_pop)
 
 
-doubling_map <- plot_usmap(data = covid_by_state_doubling_time, values = "doubling_time", labels=FALSE) + scale_fill_viridis(begin=0.1,end=0.9) +
+doubling_map <- plot_usmap(data = covid_by_state_doubling_time, values = "doubling_time_first3weeks", labels=FALSE) + scale_fill_viridis(begin=0.1,end=0.9) +
   theme(legend.position = "right") + 
   theme(panel.background = element_rect(color = "black")) + 
-  labs(fill='Doubling time (days)',title=paste('Doubling time (days) as of',substr(Sys.time(),1,10))) #+
+  labs(fill='Doubling time (days)') #+
  # labs(caption = "Created by: @eastonrwhite, Data from John Hopkins University/CDC",fill='Doubling time (days)',title=paste('Doubling time (days) as of',substr(Sys.time(),1,10)))
 doubling_map
 
@@ -756,11 +655,11 @@ plot(all_data_by_state2$testkits_per_capita_early,all_data_by_state2$doubling_ti
 text(all_data_by_state2$testkits_per_capita_early,all_data_by_state2$doubling_time_early,labels = all_data_by_state2$abbr,cex=0.7,pos=4)
 mtext(text = '(a)',side = 3,line = -1.5,adj = 0.95)
 
-plot(all_data_by_state2$testkits_per_capita_recent,all_data_by_state2$doubling_time,las=1,pch=16,ylab='Overall doubling time',xlab='Overall test kits per capita',cex.lab=1.2,xlim=c(0,1.1*max(all_data_by_state2$testkits_per_capita_recent)))
-text(all_data_by_state2$testkits_per_capita_recent,all_data_by_state2$doubling_time,labels = all_data_by_state2$abbr,cex=0.7,pos=4)
+plot(all_data_by_state2$testkits_per_capita_recent,all_data_by_state2$doubling_time_first3weeks,las=1,pch=16,ylab='Overall doubling time',xlab='Overall test kits per capita',cex.lab=1.2,xlim=c(0,1.1*max(all_data_by_state2$testkits_per_capita_recent)))
+text(all_data_by_state2$testkits_per_capita_recent,all_data_by_state2$doubling_time_first3weeks,labels = all_data_by_state2$abbr,cex=0.7,pos=4)
 mtext(text = '(b)',side = 3,line = -1.5,adj = 0.95)
 
 ```
 
 
-\clearpage
+
